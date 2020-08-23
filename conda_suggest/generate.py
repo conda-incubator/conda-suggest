@@ -1,6 +1,7 @@
 """Generates the cache files (which should not be distributed) and the map files
 (which should).
 """
+import os
 import re
 import json
 import tarfile
@@ -18,7 +19,7 @@ SUBDIRS = [
         "linux-ppc64le",
         "linux-aarch64",
 ]
-EXECUTABLE_RE = re.compile(r"(?:bin|Scripts)/([^/]*)")
+EXECUTABLE_RE = re.compile(b"(?:bin|Scripts)/([^/]*)")
 
 
 def _get_repodata_packages(channel, subdir):
@@ -32,7 +33,7 @@ def _get_repodata_packages(channel, subdir):
 def _save_cache(cache, cachefile):
     print(f"Saving cache to {cachefile}")
     with open(cachefile, 'w') as f:
-        json.dump(cache, f, sort_keys=True)
+        json.dump(cache, f, sort_keys=True, indent=1)
 
 
 def _add_entrypoints(executables, root):
@@ -41,8 +42,25 @@ def _add_entrypoints(executables, root):
         return
     points = build.get("entry_points", ())
     for point in points:
-        exe, _, _ = exe.partition("=")
+        exe, _, _ = point.partition("=")
         executables.add(exe.strip())
+
+
+def _add_recipe_entrypoints(executables, tf):
+    try:
+        fb = tf.extractfile("info/recipe/meta.yaml")
+    except KeyError:
+        # no meta.yaml in the file
+        return
+    yaml = YAML(typ='safe')
+    meta = yaml.load(fb)
+    _add_entrypoints(executables, meta)
+    outputs = meta.get("outputs", ())
+    for output in outputs:
+        if name != output.get("name", ""):
+            # only look up entrypoints for this package
+            continue
+        _add_entrypoints(executables, output)
 
 
 def _add_artifact_to_cache(cache, pkg, channel, subdir, artifact):
@@ -65,18 +83,9 @@ def _add_artifact_to_cache(cache, pkg, channel, subdir, artifact):
             m = EXECUTABLE_RE.match(f)
             if m is None:
                 continue
-            executables.add(m.group(1))
+            executables.add(m.group(1).decode())
         # next add entrypoints
-        fb = tf.extractfile("info/recipe/meta.yaml")
-        yaml = YAML(typ='safe')
-        meta = yaml.load(fb)
-        _add_entrypoints(executables, meta)
-        outputs = meta.get("outputs", ())
-        for output in outputs:
-            if name != output.get("name", ""):
-                # only look up entrypoints for this package
-                continue
-            _add_entrypoints(executables, output)
+        _add_recipe_entrypoints(executables, tf)
     entry["executables"] = sorted(executables)
     cache[artifact] = entry
 
@@ -111,8 +120,15 @@ def make_cache(channel, subdir):
     return cache
 
 
+def generate_map(cache, channel, subdir):
+    """Creates the map file from the cache file"""
+    channel_name = _get_channel_name(channel)
+    cachefile = f"{channel_name}.{subdir}.cache.json"
+    mapfile = f"{channel_name}.{subdir}.map"
+
+
 def generate(channel):
     """Generates the map files, and the cache files incidentally."""
     for subdir in SUBDIRS:
         cache = make_cache(channel, subdir)
-        #generate_map(cache)
+        #generate_map(cache, channel, subdir)

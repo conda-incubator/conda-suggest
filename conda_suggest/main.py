@@ -20,7 +20,7 @@ def main(args=None):
     if ns.subcmd == "generate":
         from . import generate
 
-        generate.generate()
+        generate.generate(ns.channel)
 
 
 if __name__ == "__main__":
