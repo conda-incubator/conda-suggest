@@ -121,14 +121,24 @@ def make_cache(channel, subdir):
 
 
 def generate_map(cache, channel, subdir):
-    """Creates the map file from the cache file"""
+    """Creates the map file from the cache"""
+    print(f"Generating map file for {channel}/{subdir}")
+    exe_pkg = set()
+    for pkg in cache.values():
+        exe_pkg.update({(exe, pkg["name"]) for exe in pkg["executables"]})
+    lines = sorted(exe_pkg)
+    lines = [f"{e}:{p}" for e, p in lines]
+    lines[-1] += "\n"
+    s = "\n".join(lines)
     channel_name = _get_channel_name(channel)
-    cachefile = f"{channel_name}.{subdir}.cache.json"
     mapfile = f"{channel_name}.{subdir}.map"
+    print(f"Writing map file {mapfile}")
+    with open(mapfile, "w") as f:
+        f.write(s)
 
 
 def generate(channel):
     """Generates the map files, and the cache files incidentally."""
     for subdir in SUBDIRS:
         cache = make_cache(channel, subdir)
-        #generate_map(cache, channel, subdir)
+        generate_map(cache, channel, subdir)
