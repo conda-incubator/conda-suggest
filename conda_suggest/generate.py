@@ -53,7 +53,11 @@ def _add_recipe_entrypoints(executables, tf):
         # no meta.yaml in the file
         return
     yaml = YAML(typ='safe')
-    meta = yaml.load(fb)
+    try:
+        meta = yaml.load(fb)
+    except Exception:
+        # failed to parse meta.yaml file, skip for now
+        return
     _add_entrypoints(executables, meta)
     outputs = meta.get("outputs", ())
     for output in outputs:
@@ -125,7 +129,7 @@ def generate_map(cache, channel, subdir):
     print(f"Generating map file for {channel}/{subdir}")
     exe_pkg = set()
     for pkg in cache.values():
-        exe_pkg.update({(exe, pkg["name"]) for exe in pkg["executables"]})
+        exe_pkg.update({(exe, pkg["package"]) for exe in pkg["executables"]})
     lines = sorted(exe_pkg)
     lines = [f"{e}:{p}" for e, p in lines]
     lines[-1] += "\n"
