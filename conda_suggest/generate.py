@@ -46,7 +46,7 @@ def _add_entrypoints(executables, root):
         executables.add(exe.strip())
 
 
-def _add_recipe_entrypoints(executables, tf):
+def _add_recipe_entrypoints(executables, tf, name):
     try:
         fb = tf.extractfile("info/recipe/meta.yaml")
     except KeyError:
@@ -89,7 +89,7 @@ def _add_artifact_to_cache(cache, pkg, channel, subdir, artifact):
                 continue
             executables.add(m.group(1).decode())
         # next add entrypoints
-        _add_recipe_entrypoints(executables, tf)
+        _add_recipe_entrypoints(executables, tf, name)
     entry["executables"] = sorted(executables)
     cache[artifact] = entry
 
