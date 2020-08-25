@@ -7,7 +7,6 @@ import json
 import tarfile
 
 import tqdm
-from ruamel.yaml import YAML
 
 
 SUBDIRS = [
@@ -30,41 +29,27 @@ def _get_repodata_packages(channel, subdir):
     return repodata["packages"]
 
 
-def _save_cache(cache, cachefile):
-    print(f"Saving cache to {cachefile}")
+def _save_cache(cache, cachefile, display=True):
+    if display:
+        print(f"Saving cache to {cachefile}")
     with open(cachefile, 'w') as f:
         json.dump(cache, f, sort_keys=True, indent=1)
 
 
-def _add_entrypoints(executables, root):
-    build = root.get("build", None)
-    if build is None:
+def _add_info_entrypoints(executables, tf):
+    try:
+        fb = tf.extractfile("info/link.json")
+    except KeyError:
+        # no link.json in the file
+        return
+    link = json.load(fb)
+    noarch = root.get("noarch", None)
+    if noarch is None:
         return
     points = build.get("entry_points", ())
     for point in points:
         exe, _, _ = point.partition("=")
         executables.add(exe.strip())
-
-
-def _add_recipe_entrypoints(executables, tf, name):
-    try:
-        fb = tf.extractfile("info/recipe/meta.yaml")
-    except KeyError:
-        # no meta.yaml in the file
-        return
-    yaml = YAML(typ='safe')
-    try:
-        meta = yaml.load(fb)
-    except Exception:
-        # failed to parse meta.yaml file, skip for now
-        return
-    _add_entrypoints(executables, meta)
-    outputs = meta.get("outputs", ())
-    for output in outputs:
-        if name != output.get("name", ""):
-            # only look up entrypoints for this package
-            continue
-        _add_entrypoints(executables, output)
 
 
 def _add_artifact_to_cache(cache, pkg, channel, subdir, artifact):
@@ -89,7 +74,7 @@ def _add_artifact_to_cache(cache, pkg, channel, subdir, artifact):
                 continue
             executables.add(m.group(1).decode())
         # next add entrypoints
-        _add_recipe_entrypoints(executables, tf, name)
+        _add_info_entrypoints(executables, tf)
     entry["executables"] = sorted(executables)
     cache[artifact] = entry
 
@@ -113,13 +98,11 @@ def make_cache(channel, subdir):
     pkgs = _get_repodata_packages(channel, subdir)
     # add packages to cache
     needed = set(pkgs.keys()) - set(cache.keys())
-    for artifact in tqdm.tqdm(needed):
-        try:
-            _add_artifact_to_cache(cache, pkgs[artifact], channel, subdir, artifact)
-        except:
-            # If something fails, we still want to save the current state
-            _save_cache(cache, cachefile)
-            raise
+    for i, artifact in enumerate(tqdm.tqdm(needed)):
+        _add_artifact_to_cache(cache, pkgs[artifact], channel, subdir, artifact)
+        if i%100 == 99:
+            # save the state occasionally
+            _save_cache(cache, cachefile, display=False)
     _save_cache(cache, cachefile)
     return cache
 
