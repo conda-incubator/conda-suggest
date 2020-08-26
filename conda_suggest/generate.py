@@ -43,10 +43,10 @@ def _add_info_entrypoints(executables, tf):
         # no link.json in the file
         return
     link = json.load(fb)
-    noarch = root.get("noarch", None)
+    noarch = link.get("noarch", None)
     if noarch is None:
         return
-    points = build.get("entry_points", ())
+    points = noarch.get("entry_points", ())
     for point in points:
         exe, _, _ = point.partition("=")
         executables.add(exe.strip())
