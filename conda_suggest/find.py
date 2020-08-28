@@ -1,11 +1,19 @@
 """Finds possible packages to install for executables."""
 import os
+import sys
 import glob
 import bisect
 import itertools
 
 
 MAPFILES = {}
+PATH_SEP = ";" if os.name == "nt" else ":"
+DEFAULT_CONDA_SUGGEST_PATH = os.environ.get("CONDA_SUGGEST_PATH",
+    PATH_SEP.join([
+        os.path.join(os.path.expanduser("~"), ".local", "share", "conda-suggest"),
+        os.path.join(sys.exec_prefix, "share", "conda-suggest")
+    ])
+)
 
 
 class Mapfile:
@@ -30,7 +38,7 @@ class Mapfile:
     def exact_find(self, exe):
         """Finds the set of packages for an executable"""
         # a space is less than all other real characters
-        left = bisect_left((exe,  " "), self.entries)
+        left = bisect.bisect_left(self.entries, (exe,  " "))
         if left == len(self.entries) or self.entries[left][0] != exe:
             # Executable not found
             if self.subdir.startswith("win") and not exe.endswith(".exe") and not exe.endswith(".bat"):
@@ -39,8 +47,18 @@ class Mapfile:
             else:
                 return set()
         # a tilde is greater than other real characters
-        right = bisect_right((exe, "~"), self.entries, lo=left)
+        right = bisect.bisect_right(self.entries, (exe, "~"), lo=left)
         return self.entries[left:right]
+
+
+def get_mapfilenames(conda_suggest_path=None):
+    """Get's the mapfilenames on the system."""
+    if conda_suggest_path is None:
+        conda_suggest_path = DEFAULT_CONDA_SUGGEST_PATH
+    mapfilenames = []
+    for d in conda_suggest_path.split(PATH_SEP):
+        mapfilenames.extend(glob.iglob(os.path.join(d, "*.map")))
+    return mapfilenames
 
 
 def get_mapfile(filename):
@@ -58,10 +76,10 @@ def exact_find_in_mapfile(exe, filename):
     return {(mapfile.channel, mapfile.subdir, e, p) for e, p in mapfile.exact_find(exe)}
 
 
-def exact_find(exe):
+def exact_find(exe, conda_suggest_path=None):
     """Finds the execuable names"""
-    filenames = glob.glob("*.map")
+    filenames = get_mapfilenames(conda_suggest_path=conda_suggest_path)
     finds = set()
-    for filename in filename:
+    for filename in filenames:
         finds |= exact_find_in_mapfile(exe, filename)
     return finds
