@@ -3,7 +3,6 @@ import os
 import sys
 import glob
 import bisect
-import itertools
 
 
 MAPFILES = {}
@@ -14,6 +13,14 @@ DEFAULT_CONDA_SUGGEST_PATH = os.environ.get("CONDA_SUGGEST_PATH",
         os.path.join(sys.exec_prefix, "share", "conda-suggest")
     ])
 )
+
+
+def _make_finder_func(exe):
+    import re
+
+    finder_re = re.compile(f".*{exe}.*")
+    func = lambda entry: finder_re.match(entry[0]) is not None
+    return func
 
 
 class Mapfile:
@@ -30,11 +37,6 @@ class Mapfile:
             s = f.read()
         self.entries = [line.partition(":")[::2] for line in s.splitlines()]
 
-    #def _find_pkg_from_idx(self, exe, i):
-    #    block = itertools.takewhile(lambda x: x[0] == exe, self._entries)
-    #    pkgs = {entry[3] for entry in block}
-    #    return pkgs
-
     def exact_find(self, exe):
         """Finds the set of packages for an executable"""
         # a space is less than all other real characters
@@ -49,6 +51,12 @@ class Mapfile:
         # a tilde is greater than other real characters
         right = bisect.bisect_right(self.entries, (exe, "~"), lo=left)
         return self.entries[left:right]
+
+    def substring_find(self, exe, finder_func=None):
+        """Finds the package names where the exe is contained in the actual executable name."""
+        if finder_func is None:
+            finder_func = _make_finder_func(exe)
+        return list(filter(finder_func, self.entries))
 
 
 def get_mapfilenames(conda_suggest_path=None):
@@ -77,9 +85,26 @@ def exact_find_in_mapfile(exe, filename):
 
 
 def exact_find(exe, conda_suggest_path=None):
-    """Finds the execuable names"""
+    """Finds the package names when the exe exactly matches what is in the package"""
     filenames = get_mapfilenames(conda_suggest_path=conda_suggest_path)
     finds = set()
     for filename in filenames:
         finds |= exact_find_in_mapfile(exe, filename)
+    return finds
+
+
+def substring_find_in_mapfile(exe, filename, finder_func=None):
+    """Finds a list of (channel, subdir, executable, package) tuples in a mapfile from the executable substring."""
+    mapfile = get_mapfile(filename)
+    return {(mapfile.channel, mapfile.subdir, e, p) for e, p in mapfile.substring_find(exe, finder_func=finder_func)}
+
+
+def substring_find(exe, conda_suggest_path=None, finder_func=None):
+    """Finds the package names where the exe is contained in the actual executable name."""
+    filenames = get_mapfilenames(conda_suggest_path=conda_suggest_path)
+    if finder_func is None:
+        finder_func = _make_finder_func(exe)
+    finds = set()
+    for filename in filenames:
+        finds |= substring_find_in_mapfile(exe, filename, finder_func=finder_func)
     return finds

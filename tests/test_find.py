@@ -1,7 +1,7 @@
 """Tests the finding capabilites"""
 import pytest
 
-from conda_suggest.find import MAPFILES, exact_find
+from conda_suggest.find import MAPFILES, exact_find, substring_find
 
 
 LINUX_MAPFILE = """-pkg-config:pkg-config
@@ -35,6 +35,23 @@ def test_find_exact_linux(exe, exp, tmpdir):
     p = tmpdir.join("test.linux-64.map")
     p.write(LINUX_MAPFILE)
     obs = exact_find(exe, conda_suggest_path=str(tmpdir))
+    obs_pkgs = {pkg for _, _, _, pkg in obs}
+    assert exp == obs_pkgs
+    MAPFILES.clear()
+
+
+@pytest.mark.parametrize("exe,exp", [
+    ("-pkg-config", {"pkg-config",}),
+    ("zzxordir", {"zziplib",}),
+    ("gcc", {"c-compiler", "fortran-compiler"}),
+    ("not-a-command", set()),
+    (),
+])
+def test_substring_find_linux(exe, exp, tmpdir):
+    MAPFILES.clear()
+    p = tmpdir.join("test.linux-64.map")
+    p.write(LINUX_MAPFILE)
+    obs = substring_find(exe, conda_suggest_path=str(tmpdir))
     obs_pkgs = {pkg for _, _, _, pkg in obs}
     assert exp == obs_pkgs
     MAPFILES.clear()
