@@ -41,17 +41,18 @@ def test_find_exact_linux(exe, exp, tmpdir):
 
 
 @pytest.mark.parametrize("exe,exp", [
-    ("-pkg-config", {"pkg-config",}),
-    ("zzxordir", {"zziplib",}),
-    ("gcc", {"c-compiler", "fortran-compiler"}),
+    ("-pkg-config", {("-pkg-config", "pkg-config",)}),
+    ("zzxordir", {("zzxordir", "zziplib",)}),
+    ("gcc", {("gcc", "c-compiler"), ("gcc", "fortran-compiler")}),
     ("not-a-command", set()),
-    (),
+    ("IDT", {("IDTFConverter", "u3d"), ("IDTFGen", "u3d")}),
+    ("dir", {("zzdir", "zziplib"), ("zzxordir", "zziplib")})
 ])
 def test_substring_find_linux(exe, exp, tmpdir):
     MAPFILES.clear()
     p = tmpdir.join("test.linux-64.map")
     p.write(LINUX_MAPFILE)
     obs = substring_find(exe, conda_suggest_path=str(tmpdir))
-    obs_pkgs = {pkg for _, _, _, pkg in obs}
-    assert exp == obs_pkgs
+    obs_e_pkgs = {(e, pkg) for _, _, e, pkg in obs}
+    assert exp == obs_e_pkgs
     MAPFILES.clear()
