@@ -1,5 +1,3 @@
-================
-xonsh Change Log
-================
+# Conda-Suggest Change Log
 
-.. current developments
+<!-- current developments -->

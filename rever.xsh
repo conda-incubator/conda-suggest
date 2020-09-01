@@ -1,4 +1,5 @@
-$PROJECT = $GITHUB_ORG = $GITHUB_REPO = 'xonsh'
+$PROJECT = $GITHUB_REPO = 'conda-suggest'
+$GITHUB_ORG = 'conda-incubator'
 $ACTIVITIES = [
     'authors', 'version_bump', 'changelog',
     'tag', 'push_tag', 'ghrelease',
