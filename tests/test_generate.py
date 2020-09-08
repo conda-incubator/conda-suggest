@@ -25,7 +25,9 @@ BASIC_CACHE = {
 @pytest.mark.parametrize(
     "remove_exprs,exp",
     [
-        ((), """
+        (
+            (),
+            """
 2dfatmic:2dfatmic
 __pycache__:cysignals
 __pycache__:django
@@ -35,8 +37,11 @@ django-admin:django
 django-admin.py:django
 iyt:yt
 yt:yt
-"""),
-        (DEFAULT_REMOVE_EXPRS, """
+""",
+        ),
+        (
+            DEFAULT_REMOVE_EXPRS,
+            """
 2dfatmic:2dfatmic
 cysignals-CSI:cysignals
 cysignals-CSI-helper.py:cysignals
@@ -44,17 +49,23 @@ django-admin:django
 django-admin.py:django
 iyt:yt
 yt:yt
-"""),
-        (("__pycache__", ".*yt"), """
+""",
+        ),
+        (
+            ("__pycache__", ".*yt"),
+            """
 2dfatmic:2dfatmic
 cysignals-CSI:cysignals
 cysignals-CSI-helper.py:cysignals
 django-admin:django
 django-admin.py:django
-"""),
+""",
+        ),
         ((".*",), ""),
     ],
 )
 def test_generate_map_remove_exprs(remove_exprs, exp, tmpdir):
-    obs = generate_map(BASIC_CACHE, "test", "linux-64", remove_exprs=remove_exprs, write=False)
+    obs = generate_map(
+        BASIC_CACHE, "test", "linux-64", remove_exprs=remove_exprs, write=False
+    )
     assert exp.lstrip() == obs

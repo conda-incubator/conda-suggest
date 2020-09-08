@@ -52,9 +52,9 @@ class Mapfile:
                 and not exe.endswith(".bat")
             ):
                 # also search extensions
-                return self.exact_find(exe + ".exe") | self.exact_find(exe + ".bat")
+                return self.exact_find(exe + ".exe") + self.exact_find(exe + ".bat")
             else:
-                return set()
+                return []
         # a tilde is greater than other real characters
         right = bisect.bisect_right(self.entries, (exe, "~"), lo=left)
         return self.entries[left:right]

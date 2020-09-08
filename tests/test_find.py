@@ -23,6 +23,12 @@ zzxorcat:zziplib
 zzxorcopy:zziplib
 zzxordir:zziplib
 """
+WINDOWS_MAPFILE = """guiqwt-tests-py3-script.pyw:guiqwt
+guiqwt-tests-py3.exe:guiqwt
+gwpy-plot-script.py:gwpy
+gwpy-plot.exe:gwpy
+hachoir-metadata-gtk-script.py:hachoir-metadata
+"""
 
 
 @pytest.mark.parametrize(
@@ -48,6 +54,23 @@ def test_find_exact_linux(exe, exp, tmpdir):
     MAPFILES.clear()
     p = tmpdir.join("test.linux-64.map")
     p.write(LINUX_MAPFILE)
+    obs = exact_find(exe, conda_suggest_path=str(tmpdir))
+    obs_pkgs = {pkg for _, _, _, pkg in obs}
+    assert exp == obs_pkgs
+    MAPFILES.clear()
+
+
+@pytest.mark.parametrize(
+    "exe,exp",
+    [
+        ("gwpy-plot", {"gwpy",},),
+        ("gwpy-plot.exe", {"gwpy",},),
+    ],
+)
+def test_find_exact_windows(exe, exp, tmpdir):
+    MAPFILES.clear()
+    p = tmpdir.join("test.win-64.map")
+    p.write(WINDOWS_MAPFILE)
     obs = exact_find(exe, conda_suggest_path=str(tmpdir))
     obs_pkgs = {pkg for _, _, _, pkg in obs}
     assert exp == obs_pkgs
