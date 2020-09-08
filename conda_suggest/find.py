@@ -121,7 +121,7 @@ def message_string(exe, conda_suggest_path=None):
         return s[:-1]
     substrings = substring_find(exe, conda_suggest_path=conda_suggest_path)
     if substrings:
-        s = f"Command {exe!r} not found in a conda package, perhaphs you meant:\n\n"
+        s = f"Command {exe!r} not found in a conda package, perhaps you meant:\n\n"
         uniques = sorted({(channel, cmd, pkg) for channel, _, cmd, pkg in substrings})
         for channel, cmd, pkg in uniques:
             s += f"    {cmd} (conda install -c {channel} {pkg})\n"
