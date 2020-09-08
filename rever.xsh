@@ -4,7 +4,7 @@ $ACTIVITIES = [
     'authors', 'version_bump', 'changelog',
     'tag', 'push_tag', 'ghrelease',
     'pypi',
-    #'conda_forge',
+    'conda_forge',
 ]
 $PYPI_SIGN = False
 
