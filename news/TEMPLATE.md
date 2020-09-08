@@ -1,6 +1,6 @@
 **Added:**
 
-* Initial release of conda-suggest!
+* <news item>
 
 **Changed:**
 

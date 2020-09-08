@@ -24,12 +24,26 @@ zzxorcopy:zziplib
 zzxordir:zziplib
 """
 
-@pytest.mark.parametrize("exe,exp", [
-    ("-pkg-config", {"pkg-config",}),
-    ("zzxordir", {"zziplib",}),
-    ("gcc", {"c-compiler", "fortran-compiler"}),
-    ("not-a-command", set()),
-])
+
+@pytest.mark.parametrize(
+    "exe,exp",
+    [
+        (
+            "-pkg-config",
+            {
+                "pkg-config",
+            },
+        ),
+        (
+            "zzxordir",
+            {
+                "zziplib",
+            },
+        ),
+        ("gcc", {"c-compiler", "fortran-compiler"}),
+        ("not-a-command", set()),
+    ],
+)
 def test_find_exact_linux(exe, exp, tmpdir):
     MAPFILES.clear()
     p = tmpdir.join("test.linux-64.map")
@@ -40,14 +54,33 @@ def test_find_exact_linux(exe, exp, tmpdir):
     MAPFILES.clear()
 
 
-@pytest.mark.parametrize("exe,exp", [
-    ("-pkg-config", {("-pkg-config", "pkg-config",)}),
-    ("zzxordir", {("zzxordir", "zziplib",)}),
-    ("gcc", {("gcc", "c-compiler"), ("gcc", "fortran-compiler")}),
-    ("not-a-command", set()),
-    ("IDT", {("IDTFConverter", "u3d"), ("IDTFGen", "u3d")}),
-    ("dir", {("zzdir", "zziplib"), ("zzxordir", "zziplib")})
-])
+@pytest.mark.parametrize(
+    "exe,exp",
+    [
+        (
+            "-pkg-config",
+            {
+                (
+                    "-pkg-config",
+                    "pkg-config",
+                )
+            },
+        ),
+        (
+            "zzxordir",
+            {
+                (
+                    "zzxordir",
+                    "zziplib",
+                )
+            },
+        ),
+        ("gcc", {("gcc", "c-compiler"), ("gcc", "fortran-compiler")}),
+        ("not-a-command", set()),
+        ("IDT", {("IDTFConverter", "u3d"), ("IDTFGen", "u3d")}),
+        ("dir", {("zzdir", "zziplib"), ("zzxordir", "zziplib")}),
+    ],
+)
 def test_substring_find_linux(exe, exp, tmpdir):
     MAPFILES.clear()
     p = tmpdir.join("test.linux-64.map")

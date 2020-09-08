@@ -7,11 +7,14 @@ import bisect
 
 MAPFILES = {}
 PATH_SEP = ";" if os.name == "nt" else ":"
-DEFAULT_CONDA_SUGGEST_PATH = os.environ.get("CONDA_SUGGEST_PATH",
-    PATH_SEP.join([
-        os.path.join(os.path.expanduser("~"), ".local", "share", "conda-suggest"),
-        os.path.join(sys.exec_prefix, "share", "conda-suggest")
-    ])
+DEFAULT_CONDA_SUGGEST_PATH = os.environ.get(
+    "CONDA_SUGGEST_PATH",
+    PATH_SEP.join(
+        [
+            os.path.join(os.path.expanduser("~"), ".local", "share", "conda-suggest"),
+            os.path.join(sys.exec_prefix, "share", "conda-suggest"),
+        ]
+    ),
 )
 
 
@@ -40,10 +43,14 @@ class Mapfile:
     def exact_find(self, exe):
         """Finds the set of packages for an executable"""
         # a space is less than all other real characters
-        left = bisect.bisect_left(self.entries, (exe,  " "))
+        left = bisect.bisect_left(self.entries, (exe, " "))
         if left == len(self.entries) or self.entries[left][0] != exe:
             # Executable not found
-            if self.subdir.startswith("win") and not exe.endswith(".exe") and not exe.endswith(".bat"):
+            if (
+                self.subdir.startswith("win")
+                and not exe.endswith(".exe")
+                and not exe.endswith(".bat")
+            ):
                 # also search extensions
                 return self.exact_find(exe + ".exe") | self.exact_find(exe + ".bat")
             else:
@@ -96,7 +103,10 @@ def exact_find(exe, conda_suggest_path=None):
 def substring_find_in_mapfile(exe, filename, finder_func=None):
     """Finds a list of (channel, subdir, executable, package) tuples in a mapfile from the executable substring."""
     mapfile = get_mapfile(filename)
-    return {(mapfile.channel, mapfile.subdir, e, p) for e, p in mapfile.substring_find(exe, finder_func=finder_func)}
+    return {
+        (mapfile.channel, mapfile.subdir, e, p)
+        for e, p in mapfile.substring_find(exe, finder_func=finder_func)
+    }
 
 
 def substring_find(exe, conda_suggest_path=None, finder_func=None):

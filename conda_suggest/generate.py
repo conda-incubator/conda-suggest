@@ -10,15 +10,16 @@ import tqdm
 
 
 SUBDIRS = [
-        "noarch",
-        "linux-64",
-        "osx-64",
-        #"osx-arm64",
-        "win-64",
-        "linux-ppc64le",
-        "linux-aarch64",
+    "noarch",
+    "linux-64",
+    "osx-64",
+    # "osx-arm64",
+    "win-64",
+    "linux-ppc64le",
+    "linux-aarch64",
 ]
 EXECUTABLE_RE = re.compile(b"(?:bin|Scripts)/([^/]*)")
+DEFAULT_REMOVE_EXPRS = ("__pycache__",)
 
 
 def _get_repodata_packages(channel, subdir):
@@ -32,7 +33,7 @@ def _get_repodata_packages(channel, subdir):
 def _save_cache(cache, cachefile, display=True):
     if display:
         print(f"Saving cache to {cachefile}")
-    with open(cachefile, 'w') as f:
+    with open(cachefile, "w") as f:
         json.dump(cache, f, sort_keys=True, indent=1)
 
 
@@ -100,32 +101,57 @@ def make_cache(channel, subdir):
     needed = set(pkgs.keys()) - set(cache.keys())
     for i, artifact in enumerate(tqdm.tqdm(needed)):
         _add_artifact_to_cache(cache, pkgs[artifact], channel, subdir, artifact)
-        if i%100 == 99:
+        if i % 100 == 99:
             # save the state occasionally
             _save_cache(cache, cachefile, display=False)
     _save_cache(cache, cachefile)
     return cache
 
 
-def generate_map(cache, channel, subdir):
-    """Creates the map file from the cache"""
+def generate_map(cache, channel, subdir, remove_exprs=DEFAULT_REMOVE_EXPRS, write=True):
+    """Creates the map file from the cache.
+
+    Parameters
+    ----------
+    cache : dict
+        Cache contents, as described in readme.
+    channel : str
+        Name of the channel
+    subdir : str
+        Name of the platform subdir
+    remove_exprs : sequence of str, optional
+        Regular expressions for which command name matches are removed from the
+        map file.
+    write : bool, optional
+        Flag for whether to actually write the file or not.
+    """
     print(f"Generating map file for {channel}/{subdir}")
+    # create remove expr func
+    rm_res = list(map(re.compile, remove_exprs))
+
+    def filter(exe):
+        return not any([rm_re.match(exe) for rm_re in rm_res])
+
+    # generate file
     exe_pkg = set()
     for pkg in cache.values():
         exe_pkg.update({(exe, pkg["package"]) for exe in pkg["executables"]})
     lines = sorted(exe_pkg)
-    lines = [f"{e}:{p}" for e, p in lines]
-    lines[-1] += "\n"
+    lines = [f"{e}:{p}" for e, p in lines if filter(e)]
+    if lines:
+        lines[-1] += "\n"
     s = "\n".join(lines)
-    channel_name = _get_channel_name(channel)
-    mapfile = f"{channel_name}.{subdir}.map"
-    print(f"Writing map file {mapfile}")
-    with open(mapfile, "w") as f:
-        f.write(s)
+    if write:
+        channel_name = _get_channel_name(channel)
+        mapfile = f"{channel_name}.{subdir}.map"
+        print(f"Writing map file {mapfile}")
+        with open(mapfile, "w") as f:
+            f.write(s)
+    return s
 
 
-def generate(channel):
+def generate(channel, remove_exprs=DEFAULT_REMOVE_EXPRS):
     """Generates the map files, and the cache files incidentally."""
     for subdir in SUBDIRS:
         cache = make_cache(channel, subdir)
-        generate_map(cache, channel, subdir)
+        generate_map(cache, channel, subdir, remove_exprs=remove_exprs)
