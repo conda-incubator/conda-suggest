@@ -1,4 +1,10 @@
 - name: Anthony Scopatz
   email: scopatz@gmail.com
-  num_commits: 16
+  num_commits: 22
   first_commit: 2020-08-22 20:43:53
+  github: scopatz
+- name: Duncan Macleod
+  email: duncan.macleod@ligo.org
+  num_commits: 1
+  first_commit: 2020-09-03 04:44:17
+  github: duncanmmacleod
