@@ -6,7 +6,7 @@ Suggest packages to install to obtain command line utilities.
 First, install conda-suggest via:
 
 ```sh
-$ conda install -c conda-suggest
+$ conda install -c conda-forge conda-suggest
 ```
 
 Then you can print a message for which packages to install to obtain a command
